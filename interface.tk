@@ -1,0 +1,49 @@
+# Git Tk Interface
+
+package require widgetmapper
+package require tk_widgets
+
+source proc.tcl
+
+pack [ttk::notebook .nb -padding 5] -fill both -expand 1
+.nb add [ttk::frame .nb.frRepo] -text "Change Repository"
+.nb add [ttk::frame .nb.frStatus] -text "Status"
+.nb select 0
+
+wm geometry . 640x480+50+50
+
+# Repository tab
+
+settemp frame .nb.frRepo.frGetRepo
+
+pack [ttk::frame $frame] -fill both -expand 1
+
+exw entry -label "Repository:" $frame.enRepoDir -state readonly
+
+ttk::button $frame.btOpenRepo -text "Open..." -command {
+    settemp dir [tk_chooseDirectory -parent . -title "Select Directory"]
+    if {$dir eq ""} return
+
+    # insert directory path into text bar
+    exw state $RepoDir {!disabled !readonly}
+    exw subcmd $RepoDir delete 0 end
+    exw subcmd $RepoDir insert 0 $dir
+    exw state $RepoDir readonly
+
+    openRepo $dir
+}
+
+exw pack $frame.enRepoDir -side left -anchor n -fill x -expand 1
+pack $frame.btOpenRepo -side left -anchor n -fill x
+
+WidgetMapper::map_widgets -start .nb.frRepo -map {RepoDir enRepoDir} -map {OpenRepo btOpenRepo}
+
+# Status tab
+
+settemp frame .nb.frStatus
+
+exw text -wrap word -scrolly -disabledbackground white $frame.txStatus TXSTATUS -state disabled
+
+exw pack $frame.txStatus -fill both -expand 1
+
+after idle [list openRepo [pwd]]
