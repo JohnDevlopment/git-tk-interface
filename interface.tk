@@ -1,16 +1,29 @@
 # Git Tk Interface
 
+if {[info exists env(DEBUG)]} {
+    set debuglevel $env(DEBUG)
+    set env(DEBUG) 1
+}
+
 package require widgetmapper
 package require tk_widgets
+package require jdebug
 
-source proc.tcl
+if {[info exists env(DEBUG)]} {
+    jdebug::on
+    jdebug::level $debuglevel
+    unset debuglevel
+}
+
+settemp basedir [file dirname [file normalize $argv0]]
+
+source [file join $basedir globals.tcl]
+source [file join $basedir proc.tcl]
 
 pack [ttk::notebook .nb -padding 5] -fill both -expand 1
 .nb add [ttk::frame .nb.frRepo] -text "Change Repository"
 .nb add [ttk::frame .nb.frStatus] -text "Status"
 .nb select 0
-
-wm geometry . 640x480+50+50
 
 # Repository tab
 
@@ -46,4 +59,16 @@ exw text -wrap word -scrolly -disabledbackground white $frame.txStatus TXSTATUS 
 
 exw pack $frame.txStatus -fill both -expand 1
 
-after idle [list openRepo [pwd]]
+# Finish setting up interface
+
+loadConfig $c_ConfigFile
+
+jdebug::print info "Current repository directory: '$Repository(directory)'"
+after idle [list openRepo $Repository(directory)]
+
+wm protocol . WM_DELETE_WINDOW {
+    if {[catch [list saveConfig $c_ConfigFile] err]} {
+        puts stderr "Could not save config: $err"
+    }
+    exit
+}
