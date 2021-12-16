@@ -1,29 +1,50 @@
 package require inifile
 
+settemp gitdir "$basedir/src/git"
+
+source "$gitdir/status.tcl"
+
 const c_DefaultGeometry [list 640 480 50 50]
 
 proc openRepo {dir} {
-    if {[catch "exec git status" result]} {
-        puts stderr "'git status' failed: $result"
+    if {! [git::status result err]} {
+        puts stderr "'git status' failed: $err"
         return
     }
 
-    set temp enRepoDir
-    set w_repo [WidgetMapper::find -start .nb.frRepo $temp]
-    assert {$w_repo ne ""} "Could not find widget '$temp'"
+    updateStatus $result
 
-    TXSTATUS state normal
-
-    TXSTATUS delete 1.0 end
-    TXSTATUS insert end $result
-
-    TXSTATUS state disabled
-
+    # update repository directory
     global RepoDir Repository
+    set w_repo [WidgetMapper::find -start .nb.frRepo enRepoDir]
+    assert {$w_repo ne ""} "Could not find widget enRepoDir"
+
     exw state $RepoDir {!disabled !readonly}
     exw subcmd $RepoDir delete 0 end
     exw subcmd $RepoDir insert 0 $Repository(directory)
     exw state $RepoDir readonly
+
+    set ::IgnoreGitStatusOnce 1
+}
+
+proc updateStatus {text} {
+    # return if the global flag IgnoreGitStatusOnce is set to true
+    global IgnoreGitStatusOnce
+    set temp 0
+    set code [catch {
+        if {$IgnoreGitStatusOnce} {
+            set temp 1
+            after idle {unset IgnoreGitStatusOnce}
+        }
+    }]
+    if {$temp} return
+    unset temp code
+
+    TXSTATUS state normal
+
+    TXSTATUS delete 1.0 end
+    TXSTATUS insert end $text
+    TXSTATUS state disabled
 }
 
 proc newConfig {file} {
