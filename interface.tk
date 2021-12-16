@@ -5,6 +5,7 @@ if {[info exists env(DEBUG)]} {
     set env(DEBUG) 1
 }
 
+set NDEBUG 0
 package require widgetmapper
 package require tk_widgets
 package require jdebug
@@ -17,8 +18,8 @@ if {[info exists env(DEBUG)]} {
 
 settemp basedir [file dirname [file normalize $argv0]]
 
-source [file join $basedir globals.tcl]
-source [file join $basedir proc.tcl]
+source "$basedir/src/globals.tcl"
+source "$basedir/src/proc.tcl"
 
 pack [ttk::notebook .nb -padding 5] -fill both -expand 1
 .nb add [ttk::frame .nb.frRepo] -text "Change Repository"
